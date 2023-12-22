@@ -25,7 +25,7 @@ class ProfilRequest extends FormRequest
         return [
             "firstname" => 'string|max:255',
             "lastname" => 'string|max:255',
-            "image" => 'required|image|mimes:jpg,png,jpeg|max:2048',
+            "image" => 'required|image|mimes:jpg,png,jpeg|max:4048',
             "user_id" => 'exists:App\Models\User,id',
             'user_id.exists' => 'Not an existing ID'
         ];

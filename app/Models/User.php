@@ -3,12 +3,17 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Order;
+use App\Models\Profil;
+use App\Models\Product;
+use App\Models\Conversation;
+use Laravel\Sanctum\HasApiTokens;
+use App\Notifications\MessageSent;;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
@@ -61,4 +66,18 @@ class User extends Authenticatable
     {
         return $this->hasMany(Product::class);
     }
+
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class);
+    }
+
+    public function routeNotificationForOneSignal() : array{
+        return ['tags'=>['key'=>'user_id','relation'=>'=', 'value'=>(string)($this->id)]];
+    }
+
+    public function sendNewMessageNotification(array $data) : void {
+        $this->notify(new MessageSent($data));
+    }
+
 }

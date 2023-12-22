@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->string('address')->nullable();
             $table->boolean('isSeller')->default(false);
+            $table->string('statusOn')->default('online');
             $table->rememberToken();
             $table->timestamps();
         });

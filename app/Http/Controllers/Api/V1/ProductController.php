@@ -10,15 +10,35 @@ use App\Http\Requests\ProductRequest;
 use App\Http\Resources\ProductResource;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateProductRequest;
+use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('restrictRole:1')->only('store', 'update', 'destroy');
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         return ProductResource::collection(Product::all());
+    }
+
+
+    public function myProducts(){
+        $myProducts = Product::where('user_id', auth()->user()->id)->get();
+
+        $dataProduct = [];
+
+        if (isset($myProducts)) {
+            foreach ($myProducts as $myProduct) {
+                $dataProduct[] = $myProduct;
+            }
+        }
+        return $dataProduct;
     }
 
     /**
@@ -41,6 +61,8 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $validitedata['image'] = $request->file('image')->store('public/images/products');
         }
+
+        $validitedata['user_id'] = Auth::id();
         
         $product = Product::create($validitedata);
 
@@ -55,12 +77,35 @@ class ProductController extends Controller
 
     }
 
+    public function sellerProduct(int $id)
+    {
+        return ProductResource::collection(Product::where('user_id', $id)->get());
+    }
+
+    public function getProductImage(String $url)
+    {
+        if (Product::where('image', 'public/images/products/'.$url)->first()->image) {
+            return response()->file(storage_path('app/public/images/products/'.$url));
+            //return response()->file(storage_path('app/public/images/products/'.$image));
+        }
+        return response()->file(storage_path('app/public/images/profils/defaultAvatar.jpg'));
+    }
+
     /**
      * Display the specified resource.
      */
     public function show(Product $product)
     {
-       return ProductResource::make($product);
+       return  response()->json([
+                'status' => true,
+                'message' => 'Product est crée avec succès',
+                'data' => [
+                    "product"=> ProductResource::make($product),
+                    "user"=> UserResource::make($product->user),
+
+                ],
+            ]);
+       
     }
 
     /**
@@ -85,6 +130,8 @@ class ProductController extends Controller
             Storage::delete($product->image);
             $validitedata['image'] = $request->file('image')->store('public/images/products');
         }
+
+        $validitedata['user_id'] = Auth::id();
 
         $product->update($validitedata);
 

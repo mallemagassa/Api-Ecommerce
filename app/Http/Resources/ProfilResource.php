@@ -19,7 +19,7 @@ class ProfilResource extends JsonResource
             'firstname' => $this->firstname,
             'lastname' => $this->lastname,
             'image' => $this->image,
-            'user_id' => $this->address,
+            'user_id' => $this->user_id,
         ];
     }
 }

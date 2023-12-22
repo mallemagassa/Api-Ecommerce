@@ -18,7 +18,7 @@ class AuthController extends Controller
             $input = $request->all();
 
             $validator = FacadesValidator::make($input, [
-            "phone"=> 'required|string|max:255',
+                "phone" => 'required|phone:INTERNATIONAL,ML',
             ]);
             
             if ($validator->fails()) {
@@ -37,12 +37,10 @@ class AuthController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Connexion Réussis !',
-                    'info_user' => UserResource::make($user),
+                    'info_user'  => UserResource::make(Auth::user()),
                     'data' => [
                         "token"=> $user->createToken('auth_user')->plainTextToken,
                         "token_type"=> "Bearer",
-                        //"isAdmin" => (bool) $request->user()->is_admin
-
                     ],
                 ]);
             }
@@ -63,6 +61,23 @@ class AuthController extends Controller
              ], 500);
         }
         
-     }
+    }
+
+    public function verifyNumberAuth(Request $request) {
+        $input = $request->all();
+
+        if (!User::where('phone', $input['phone'])->first()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cette numéro ne existe pas essayer de vous Inscrire',
+            ]);
+
+        }else{
+            return response()->json([
+                'status' => true,
+                'message' => 'Cool',
+            ]);
+        }
+    }
    
 }

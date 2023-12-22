@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\User;
 use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
+use App\Events\MessageWasPosted;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MessageRequest;
 use App\Http\Resources\MessageResource;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ConversationRequest;
 use App\Http\Resources\ConversationResource;
 
@@ -18,7 +21,42 @@ class MessageController extends Controller
      */
     public function index()
     {
+        //Message::where('conversation_id', 0)->get();
+        //dd(count(Message::where('conversation_id', 2)->get()));
         return MessageResource::collection(Message::all());
+    }
+
+    public function getImageMessage(String $url)
+    {
+        if (file_exists(storage_path() . '/app/public/images/messages/media/'.$url)) {
+            return response()->file(storage_path('app/public/images/messages/media/'.$url));
+            //return response()->file(storage_path('app/public/images/products/'.$image));
+        }
+        return response()->file(storage_path('app/public/images/profils/defaultAvatar.jpg'));
+    }
+    
+    public function getImageProductM(String $url)
+    {
+        if (file_exists(storage_path() . '/app/public/images/products/'.$url)) {
+            return response()->file(storage_path('app/public/images/products/'.$url));
+            //return response()->file(storage_path('app/public/images/products/'.$image));
+        }
+        return response()->file(storage_path('app/public/images/profils/defaultAvatar.jpg'));
+    }
+
+
+    public function deleteImageMessage(String $url)
+    {
+        if (file_exists(storage_path() . '/app/public/images/messages/media/'.$url)) {
+            Storage::delete('public/images/messages/media/'.$url);
+            return response()->json([
+                'status' => true,
+                'message' => 'Image est supprimer avec succes',
+            ], 422);
+            //response()->file();
+            //return response()->file(storage_path('app/public/images/products/'.$image));
+        }
+        return null; //response()->file(storage_path('app/public/images/profils/defaultAvatar.jpg'));
     }
 
     /**
@@ -63,10 +101,12 @@ class MessageController extends Controller
                 'receiver_id' => $validitedata['receiver_id'],
                 'type' => $validitedata['type'],
                 'text' => isset($validitedata['text']) ? $validitedata['text'] : null,
-                'media' => isset($validitedata['media']) ? $validitedata['media'] : null,
+                'media' => isset($validitedata['media']) ?  $validitedata['media'] : null,
                 'document' => isset($validitedata['document']) ? $validitedata['document'] : null,
                 'conversation_id' =>$createdconversation->id,
             ]);
+
+            event(new MessageWasPosted($createdMessage));
             
             return response()->json([
                 'status' => true,
@@ -101,6 +141,11 @@ class MessageController extends Controller
                 'conversation_id' =>$checkConversation[0]->id,
             ]);
 
+            //dd($createdMessage->conversation->id);
+            event(new MessageWasPosted($createdMessage));
+            
+            $this->sendNotificationToReceiver($createdMessage);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Message est crée avec succès',
@@ -116,6 +161,39 @@ class MessageController extends Controller
     public function show(Message $message)
     {
         MessageResource::make($message);
+    }
+
+
+     /**
+     * Send notification to other users
+     *
+     * @param Message $message
+     */
+    private function sendNotificationToReceiver(Message $message) : void {
+
+        // TODO move this event broadcast to observer
+        broadcast(new MessageWasPosted($message))->toOthers();
+
+        $user = auth()->user();
+        $userId = $user->id;
+
+        $message = Message::where('id', $message->id)->get();
+        
+        if(count($message) > 0){
+            //dd($message[0]->receiver_id);
+            $receiver = User::where('id',$message[0]->receiver_id)->first();
+
+            //$otherUser = User::where('id',$otherUserId)->first();
+            $receiver->sendNewMessageNotification([
+                'messageData'=>[
+                    'senderName'=>$user->nomEom,
+                    'message'=>$message[0]->text,
+                    'message_id'=>$message[0]->id
+                ]
+            ]);
+
+        }
+
     }
 
     /**

@@ -20,12 +20,42 @@ class ConversationController extends Controller
      */
     public function index()
     {
-        $receiver = [];
-        $conversations = Conversation::where('sender_id', auth()->user()->id)->orWhere('receiver_id',  auth()->user()->id)->orderBy('created_at', 'DESC')->get();
-        foreach($conversations as $conversation){
-            $receiver[] = $this->getChatUser($conversation);
+        // $data = [];
+        // $conversations = Conversation::where('sender_id', auth()->user()->id)
+        //     ->orWhere('receiver_id', auth()->user()->id)
+        //     ->orderBy('created_at', 'DESC')
+        //     ->get();
+    
+        // foreach ($conversations as $conversation) {
+        //     $user = $this->getChatUser($conversation);
+    
+        //     $data[] = [
+        //         'user' => new UserResource($user), // Les informations de l'utilisateur
+        //         'conversation_id' => $conversation->id, // L'ID de la conversation
+        //     ];
+        // }
+    
+        // return response()->json($data);
+
+        $data = [];
+        $conversations = Conversation::where('sender_id', auth()->user()->id)
+            ->orWhere('receiver_id', auth()->user()->id)
+            ->orderBy('created_at', 'DESC')
+            ->get();
+    
+        foreach ($conversations as $conversation) {
+            $user = $this->getChatUser($conversation);
+            $userData = new UserResource($user); // Formatage des données de l'utilisateur
+            $userData->conversation_id = $conversation->id; // Ajout de conversation_id à l'objet UserResource
+            $userData->receiver_id = $conversation->receiver_id; // Ajout de conversation_id à l'objet UserResource
+            
+            $data[] =
+                $userData // Utilisation de l'objet UserResource modifié
+            ;
         }
-        return UserResource::collection($receiver);
+        //dd($data[0]['user']->phone);
+    
+        return response()->json($data);
     }
 
 
@@ -39,15 +69,34 @@ class ConversationController extends Controller
         return $receiver;
     }
 
+    public function con(User $user, Conversation $conversation)
 
-    public function selectConversation(Conversation $conversation, int $receiverId){
+    {
+        //$users =  User::collection($conversation->sender, $conversation->receiver);
+        //$users = collect([$conversation->sender, $conversation->receiver]);
+        dd($conversation->sender->id, $conversation->receiver->id, $user->id);
+        //return $users->contains($user);
+    }
 
-        //dd($conversation, $receiverId);
-        $selecConversation = $conversation;
-        
+
+    public function selectConversation(int $conversation, int $receiverId){
+
+        $selecConversation = Conversation::where('id', $conversation)->get();
         $receiver = User::find($receiverId);
-
-        return $this->loadMessage($selecConversation, $receiver);
+        
+        if (count($selecConversation) > 0) {
+            return $this->loadMessage(Conversation::find($selecConversation[0]->id), $receiver);
+           // dd($selecConversation);
+        }else{
+            $selecConversation2 = Conversation::where('receiver_id', auth()->user()->id)->where("sender_id", $receiver->id)->orWhere('receiver_id', $receiver->id)->where("sender_id", auth()->user()->id)->get();
+            if (count($selecConversation2) > 0) {
+                return $this->loadMessage(Conversation::find($selecConversation2[0]->id), $receiver);
+                //dd($selecConversatio);
+            }
+            return [];
+            //echo 'No conversation';
+        }
+       
     }
 
     public function loadMessage(Conversation $conversation, User $receiverId){

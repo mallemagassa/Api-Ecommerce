@@ -25,9 +25,9 @@ class OrderRequest extends FormRequest
         return [
             "numOrder" => 'string',
             "priceTotal" => 'required|numeric',
-            "user_id" => 'exists:App\Models\User,id',
-            "product_id" => 'exists:App\Models\Product,id',
-            'user_id.exists' => 'Not an existing ID',
+            "quantity" => 'required|numeric',
+            "product_id" => 'required|exists:App\Models\Product,id',
+            //'user_id.exists' => 'Not an existing ID',
             'product_id.exists' => 'Not an existing ID'
         ];
     }

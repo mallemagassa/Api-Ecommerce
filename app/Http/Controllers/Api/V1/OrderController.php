@@ -8,6 +8,7 @@ use App\Http\Requests\OrderRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Http\Requests\UpdateOrderRequest;
+use App\Http\Resources\UserResource;
 
 class OrderController extends Controller
 {
@@ -17,6 +18,26 @@ class OrderController extends Controller
     public function index()
     {
         return OrderResource::collection(Order::all());
+    }
+
+    public function getOrderAuth(){
+        $myOrders = Order::where('user_id', auth()->user()->id)->get();
+
+        return OrderResource::collection($myOrders);
+    }
+
+    public function getOrderWithUser(){
+        $myOrders = Order::where('user_id', auth()->user()->id)->get();
+
+        $dataUser = [];
+
+        if (isset($myOrders)) {
+            foreach ($myOrders as $myOrder) {
+                $dataUser[] = $myOrder->product->user;
+            }
+        }
+        $uniqueArray = array_unique($dataUser);
+        return UserResource::collection($uniqueArray);
     }
 
     /**
@@ -37,13 +58,14 @@ class OrderController extends Controller
         }
 
         $validitedata['numOrder'] = 'C'.date('Ymd').$this->generateUniqueCode();
-        $product = Order::create($validitedata);
+        $validitedata['user_id'] = auth()->user()->id;
+        $order = Order::create($validitedata);
 
         return response()->json([
             'status' => true,
             'message' => 'Commande est crée avec succès',
             'data' => [
-                "orders"=> OrderResource::make($product),
+                "order"=> OrderResource::make($order),
 
             ],
         ]);
