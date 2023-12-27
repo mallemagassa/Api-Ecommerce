@@ -1,5 +1,6 @@
 <?php
 
+use App\Broadcasting\UserJoinedChannel;
 use App\Broadcasting\ConversationChannel;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -21,3 +22,5 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 
 Broadcast::channel('conversation.{conversationId}', ConversationChannel::class);
+
+Broadcast::channel('user.{userId}', UserJoinedChannel::class);

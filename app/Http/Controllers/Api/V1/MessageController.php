@@ -8,11 +8,11 @@ use App\Models\Conversation;
 use Illuminate\Http\Request;
 use App\Events\MessageWasPosted;
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessPendingMessages;
 use App\Http\Requests\MessageRequest;
 use App\Http\Resources\MessageResource;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\ConversationRequest;
-use App\Http\Resources\ConversationResource;
+use App\Http\Controllers\Api\V1\FirebasePushController;
 
 class MessageController extends Controller
 {
@@ -77,7 +77,7 @@ class MessageController extends Controller
         }
 
         $checkConversation = Conversation::where('receiver_id', auth()->user()->id)->where("sender_id", $validitedata['receiver_id'])->orWhere('receiver_id', $validitedata['receiver_id'])->where("sender_id", auth()->user()->id)->get(); //$validitedata['$validitedata'])
-        
+        $firebasePushController = new FirebasePushController();
         if (count($checkConversation) == 0) {
                 
             $createdconversation = Conversation::create([
@@ -107,7 +107,31 @@ class MessageController extends Controller
             ]);
 
             event(new MessageWasPosted($createdMessage));
+
+            //ProcessPendingMessages::dispatch($createdMessage);
+
+            $user = User::find($createdMessage->receiver_id);
+
+            if ($createdMessage->media != null) {
+                $firebasePushController->notification([
+                    'fcm_token' => $user->fcm_token,
+                    'title' => 'Message',
+                    'body' => $createdMessage->media,
+                    'receiver_id' => $createdMessage->receiver_id,
+                    'conversation_id' => $createdMessage->conversation_id,
+                ]);
+            }else{
+                $firebasePushController->notification([
+                    'fcm_token' => $user->fcm_token,
+                    'title' => 'Message',
+                    'body' => $createdMessage->text,
+                    'receiver_id' => $createdMessage->receiver_id,
+                    'conversation_id' => $createdMessage->conversation_id,
+                ]);
+            }
             
+            //$this->sendNotificationToReceiver($createdMessage);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Message est crée avec succès',
@@ -141,10 +165,33 @@ class MessageController extends Controller
                 'conversation_id' =>$checkConversation[0]->id,
             ]);
 
+            $user = User::find($createdMessage->receiver_id);
+
+            if ($createdMessage->media != null) {
+                $firebasePushController->notification([
+                    'fcm_token' => $user->fcm_token,
+                    'title' => 'Message',
+                    'body' => $createdMessage->media,
+                    'receiver_id' => $createdMessage->receiver_id,
+                    'conversation_id' => $createdMessage->conversation_id,
+                ]);
+            }else{
+                $firebasePushController->notification([
+                    'fcm_token' => $user->fcm_token,
+                    'title' => 'Message',
+                    'body' => $createdMessage->text,
+                    'receiver_id' => $createdMessage->receiver_id,
+                    'conversation_id' => $createdMessage->conversation_id,
+                ]);
+            }
+
+
             //dd($createdMessage->conversation->id);
             event(new MessageWasPosted($createdMessage));
             
-            $this->sendNotificationToReceiver($createdMessage);
+            ProcessPendingMessages::dispatch($createdMessage);
+
+            //$this->sendNotificationToReceiver($createdMessage);
 
             return response()->json([
                 'status' => true,

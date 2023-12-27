@@ -119,4 +119,16 @@ class UserController extends Controller
 
         return UserResource::make($user);
     }
+
+
+    public function checkUserIsLine(User $user)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        $user->statusOn = 'online'; 
+
+        $user->save();
+    }
 }

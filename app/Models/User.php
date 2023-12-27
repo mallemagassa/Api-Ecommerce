@@ -29,6 +29,7 @@ class User extends Authenticatable
         'nameCom',
         'status',
         'address',
+        'fcm_token',
         'isSeller',
     ];
 

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\RegisterController;
 use App\Http\Controllers\Api\V1\SendVerificationCode;
 use App\Http\Controllers\Api\V1\ConversationController;
+use App\Http\Controllers\Api\V1\FirebasePushController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,7 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
         ]);
 
         Route::apiResource('/products', ProductController::class)->middleware('restrictRole:1');
+        Route::get('/checkUserIsLine/{user}', [UserController::class, 'checkUserIsLine']);
         Route::get('/selectconver/{conversation}/{receiver}', [ConversationController::class, 'selectConversation']);
         Route::get('/con/{user}/{conversation}', [ConversationController::class, 'con']);
         Route::post('/sendPhone', [SendVerificationCode::class, 'sendVerificationCode']);
@@ -69,6 +71,8 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
         Route::get('/deleteImageMessage/{url}', [MessageController::class, 'deleteImageMessage']);
         Route::get('/getOrderWithUser', [OrderController::class, 'getOrderWithUser']);
         Route::get('/getOrderAuth', [OrderController::class, 'getOrderAuth']);
+        Route::post('/setToken', [FirebasePushController::class, 'setToken']);
+        Route::post('/notification', [FirebasePushController::class, 'notification']);
     });
 });
 

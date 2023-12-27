@@ -7,6 +7,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AppServiceProvider extends ServiceProvider
 {
+
+    protected $listen = [
+        'App\Events\MessageWasPosted' => [
+            'App\Listeners\MessagePostedListener',
+        ],
+    ];
     /**
      * Register any application services.
      */
