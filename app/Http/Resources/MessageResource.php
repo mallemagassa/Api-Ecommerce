@@ -23,6 +23,8 @@ class MessageResource extends JsonResource
             'media' => $this->media,
             'video' => $this->video,
             'document' => $this->document,
+            'is_sender_delete' => (bool) $this->is_sender_delete,
+            'is_receiver_delete' => (bool) $this->is_receiver_delete,
             'conversation_id' => $this->conversation_id,
         ];
     }

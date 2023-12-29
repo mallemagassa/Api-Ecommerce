@@ -23,6 +23,8 @@ return new class extends Migration
             $table->string("video")->nullable();
             $table->string("document")->nullable();
             $table->foreignId('conversation_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
+            $table->boolean('is_sender_delete')->default(false);
+            $table->boolean('is_receiver_delete')->default(false);
             $table->timestamps();
         });
     }

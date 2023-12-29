@@ -65,6 +65,7 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
         Route::get('/getProductImage/{url}', [ProductController::class, 'getProductImage']);
         Route::get('/myProducts', [ProductController::class, 'myProducts']);
         Route::get('/getProfilUser/{url}', [ProfilController::class, 'getProfilUser']);
+        Route::get('/getOrderImage/{url}', [OrderController::class, 'getOrderImage']);
         Route::get('/sellerProduct/{id}', [ProductController::class, 'sellerProduct']);
         Route::get('/getImageMessage/{url}', [MessageController::class, 'getImageMessage']);
         Route::get('/getImageProductM/{url}', [MessageController::class, 'getImageProductM']);
@@ -73,6 +74,7 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
         Route::get('/getOrderAuth', [OrderController::class, 'getOrderAuth']);
         Route::post('/setToken', [FirebasePushController::class, 'setToken']);
         Route::post('/notification', [FirebasePushController::class, 'notification']);
+        //Route::get('/deleteMessage/{messageId}', [MessageController::class, 'deleteMessage']);
     });
 });
 

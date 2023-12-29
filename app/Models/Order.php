@@ -19,6 +19,7 @@ class Order extends Model
         'numOrder',
         'priceTotal',
         'quantity',
+        'imageUrl',
         'user_id',
         'product_id',
     ];

@@ -6,9 +6,10 @@ use App\Models\Order;
 use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\OrderResource;
-use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\OrderResource;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\UpdateOrderRequest;
 
 class OrderController extends Controller
 {
@@ -40,6 +41,15 @@ class OrderController extends Controller
         return UserResource::collection($uniqueArray);
     }
 
+    public function getOrderImage(String $url)
+    {
+        if (Order::where('imageUrl', 'public/images/orders/'.$url)->first()->imageUrl != null) {
+            return response()->file(storage_path('app/public/images/orders/'.$url));
+            //return response()->file(storage_path('app/public/images/products/'.$image));
+        }
+        return response()->file(storage_path('app/public/images/profils/defaultAvatar.jpg'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -59,8 +69,20 @@ class OrderController extends Controller
 
         $validitedata['numOrder'] = 'C'.date('Ymd').$this->generateUniqueCode();
         $validitedata['user_id'] = auth()->user()->id;
+        $filename = $validitedata['numOrder'] .$validitedata['imageUrl'];
+
+        if (!Storage::exists('public/images/orders/')) {
+            Storage::makeDirectory('public/images/orders/');
+        }
+        if (Storage::exists('public/images/orders/') && Storage::exists('public/images/products/'.$validitedata['imageUrl'])) {
+            Storage::copy('public/images/products/'.$validitedata['imageUrl'], 'public/images/orders/' . $filename);
+        } else {
+           echo 'non file';
+        }
+        $validitedata['imageUrl'] = "public/images/orders/".$validitedata['numOrder'].$validitedata['imageUrl'];
         $order = Order::create($validitedata);
 
+        
         return response()->json([
             'status' => true,
             'message' => 'Commande est crée avec succès',

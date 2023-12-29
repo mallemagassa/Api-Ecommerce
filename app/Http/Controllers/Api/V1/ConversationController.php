@@ -44,14 +44,30 @@ class ConversationController extends Controller
             ->get();
     
         foreach ($conversations as $conversation) {
-            $user = $this->getChatUser($conversation);
-            $userData = new UserResource($user); // Formatage des données de l'utilisateur
-            $userData->conversation_id = $conversation->id; // Ajout de conversation_id à l'objet UserResource
-            $userData->receiver_id = $conversation->receiver_id; // Ajout de conversation_id à l'objet UserResource
+            if ($conversation->sender_id == auth()->user()->id) {
+                if ($conversation->is_sender_delete == 0) {
+                    
+                    $user = $this->getChatUser($conversation);
+                    $userData = new UserResource($user);
+                    $userData->conversation_id = $conversation->id;
+                    $userData->receiver_id = $conversation->receiver_id;
+                    
+                    $data[] = $userData;
+                }
+                
+            }else{
+                if ($conversation->is_receiver_delete == 0) {
+                    
+                    $user = $this->getChatUser($conversation);
+                    $userData = new UserResource($user);
+                    $userData->conversation_id = $conversation->id;
+                    $userData->receiver_id = $conversation->receiver_id;
+                    
+                    $data[] = $userData;
+                }
+    
+            }
             
-            $data[] =
-                $userData // Utilisation de l'objet UserResource modifié
-            ;
         }
         //dd($data[0]['user']->phone);
     
@@ -61,9 +77,13 @@ class ConversationController extends Controller
 
     public function getChatUser(Conversation $conversation){
         if ($conversation->sender_id == auth()->user()->id) {
+            $receiver  = User::firstWhere('id', $conversation->sender_id);
+
             $receiver = User::firstWhere('id', $conversation->receiver_id);
         }else{
-            $receiver  = User::firstWhere('id', $conversation->sender_id);
+            if ($conversation->is_receiver_delete == 0) {
+                $receiver  = User::firstWhere('id', $conversation->sender_id);
+            }
         }
 
         return $receiver;
@@ -103,8 +123,22 @@ class ConversationController extends Controller
 
         //dd($conversation, $receiverId);
 
+        $data = [];
+
         $messages = Message::where('conversation_id', $conversation->id)->get();
-        return MessageResource::collection($messages);
+
+        foreach($messages as $message){
+            if ($message->sender_id == auth()->user()->id) {
+                if ($message->is_sender_delete == 0) {
+                    $data[] = $message;
+                }
+            }else{
+                if ($message->is_receiver_delete == 0) {
+                    $data[] = $message;
+                }
+            }
+        }
+        return MessageResource::collection($data);
 
     }
 
@@ -217,14 +251,23 @@ class ConversationController extends Controller
      */
     public function destroy(Conversation $conversation)
     {
-        $conversation->delete();
+        if ($conversation->sender_id == auth()->user()->id) {
+            $conversation->is_sender_delete = true;
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Conversation est modifier avec succès',
-            'data' => [
-                "conversations"=> ConversationResource::make($conversation),
-            ],
-        ]);
+            $conversation->save();
+        }else{
+            $conversation->is_receiver_delete = true;
+
+            $conversation->save();
+        }
+        // $conversation->delete();
+
+        // return response()->json([
+        //     'status' => true,
+        //     'message' => 'Conversation est modifier avec succès',
+        //     'data' => [
+        //         "conversations"=> ConversationResource::make($conversation),
+        //     ],
+        // ]);
     }
 }

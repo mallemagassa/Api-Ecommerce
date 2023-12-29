@@ -17,6 +17,8 @@ return new class extends Migration
             $table->unsignedBigInteger('receiver_id');
             $table->foreign('sender_id')->references('id')->on('users');
             $table->foreign('receiver_id')->references('id')->on('users');
+            $table->boolean('is_sender_delete')->default(false);
+            $table->boolean('is_receiver_delete')->default(false);
             $table->timestamps();
         });
     }

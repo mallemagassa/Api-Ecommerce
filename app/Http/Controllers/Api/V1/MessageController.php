@@ -189,7 +189,7 @@ class MessageController extends Controller
             //dd($createdMessage->conversation->id);
             event(new MessageWasPosted($createdMessage));
             
-            ProcessPendingMessages::dispatch($createdMessage);
+           // ProcessPendingMessages::dispatch($createdMessage);
 
             //$this->sendNotificationToReceiver($createdMessage);
 
@@ -202,12 +202,20 @@ class MessageController extends Controller
             ]);
         }
     }
+
+    /**
+     * Delete the Message.
+     */
+    // public function deleteMessage(Message $message){
+    //     dd($message);
+
+    // }
     /**
      * Display the specified resource.
      */
     public function show(Message $message)
     {
-        MessageResource::make($message);
+        return MessageResource::make($message);
     }
 
 
@@ -254,8 +262,16 @@ class MessageController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Message $message)
     {
-        //
+        if ($message->sender_id == auth()->user()->id) {
+            $message->is_sender_delete = true;
+
+            $message->save();
+        }else{
+            $message->is_receiver_delete = true;
+
+            $message->save();
+        }
     }
 }

@@ -27,7 +27,7 @@ class OrderRequest extends FormRequest
             "priceTotal" => 'required|numeric',
             "quantity" => 'required|numeric',
             "product_id" => 'required|exists:App\Models\Product,id',
-            //'user_id.exists' => 'Not an existing ID',
+            "imageUrl" => 'required|string',
             'product_id.exists' => 'Not an existing ID'
         ];
     }

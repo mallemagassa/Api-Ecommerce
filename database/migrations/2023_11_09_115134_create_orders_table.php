@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string("numOrder");
             $table->integer("priceTotal");
             $table->integer("quantity");
+            $table->string("imageUrl");
             $table->foreignId("user_id")->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId("product_id")->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->timestamps();
