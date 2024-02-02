@@ -20,9 +20,11 @@ class UserResource extends JsonResource
             "nameCom" => $this->nameCom,
             "status" => $this->status,
             "address" => $this->address,
+            "fcm_token " => $this->fcm_token ,
             "isSeller" => (bool) $this->isSeller,
             "conversation_id" => $this->conversation_id,
             "receiver_id" => $this->receiver_id,
+            'created_at' => $this->created_at,
         ];
     }
 }

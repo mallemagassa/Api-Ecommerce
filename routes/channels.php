@@ -23,4 +23,4 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 Broadcast::channel('conversation.{conversationId}', ConversationChannel::class);
 
-Broadcast::channel('user.{userId}', UserJoinedChannel::class);
+// Broadcast::channel('user.{userId}', UserJoinedChannel::class);

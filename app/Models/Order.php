@@ -20,6 +20,8 @@ class Order extends Model
         'priceTotal',
         'quantity',
         'imageUrl',
+        'product_name',
+        'product_price',
         'user_id',
         'product_id',
     ];

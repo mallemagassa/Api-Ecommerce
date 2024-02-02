@@ -22,9 +22,10 @@ return new class extends Migration
             $table->string("media")->nullable();
             $table->string("video")->nullable();
             $table->string("document")->nullable();
-            $table->foreignId('conversation_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
+            $table->string("numOrder")->nullable();
             $table->boolean('is_sender_delete')->default(false);
             $table->boolean('is_receiver_delete')->default(false);
+            $table->foreignId('conversation_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->timestamps();
         });
     }

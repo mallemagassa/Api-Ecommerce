@@ -23,7 +23,7 @@ class OrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "numOrder" => 'required|string',
+            "numOrder" => 'string',
             "priceTotal" => 'required|numeric',
             "quantity" => 'required|numeric',
             "product_id" => 'required|exists:App\Models\Product,id',

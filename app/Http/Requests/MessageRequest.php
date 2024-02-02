@@ -25,9 +25,10 @@ class MessageRequest extends FormRequest
         return [
             "type" => 'required|string|max:255',
             "text" => 'string|max:955',
-            "media" => 'image|mimes:jpg,png,jpeg|max:2048',
+            "media" => 'string',
             "document" => 'file|mimes:ppt,pdf,pptx,doc,docx,xlsx|max:204800,csv,txt,xlx,xls,pdf|max:2048',
-            'video' => 'mimes:mp4,x-flv,x-mpegURL,MP2T,3gpp,quicktime,x-msvideo,x-ms-wmv',
+            "video" => 'mimes:mp4,x-flv,x-mpegURL,MP2T,3gpp,quicktime,x-msvideo,x-ms-wmv',
+            "numOrder" => 'string|max:255',
             //video:m4v,avi,flv,mp4,mov,mimes:mp4,ogg | max:20000,qt | max:20000,mimetypes:video/x-ms-asf,ogx,oga,ogv,webm
             //"sender_id" => 'exists:App\Models\User,id',
             "receiver_id" => 'exists:App\Models\User,id',

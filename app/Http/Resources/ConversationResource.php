@@ -18,6 +18,7 @@ class ConversationResource extends JsonResource
             'id' => $this->id,
             'sender_id' => $this->sender_id,
             'receiver_id' => $this->receiver_id,
+            'created_at' => $this->created_at,
         ];
     }
 }

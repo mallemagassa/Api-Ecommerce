@@ -7,11 +7,13 @@ use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
 use App\Events\MessageWasPosted;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessPendingMessages;
 use App\Http\Requests\MessageRequest;
 use App\Http\Resources\MessageResource;
 use Illuminate\Support\Facades\Storage;
+use Kreait\Firebase\Exception\Messaging\NotFound;
 use App\Http\Controllers\Api\V1\FirebasePushController;
 
 class MessageController extends Controller
@@ -95,39 +97,90 @@ class MessageController extends Controller
             if ($request->hasFile('document')) {
                 $validitedata['document'] = $request->file('document')->store('public/images/messages/documents');
             }
-            
-            $createdMessage = Message::create([
-                'sender_id' => auth()->user()->id,
-                'receiver_id' => $validitedata['receiver_id'],
-                'type' => $validitedata['type'],
-                'text' => isset($validitedata['text']) ? $validitedata['text'] : null,
-                'media' => isset($validitedata['media']) ?  $validitedata['media'] : null,
-                'document' => isset($validitedata['document']) ? $validitedata['document'] : null,
-                'conversation_id' =>$createdconversation->id,
-            ]);
 
-            event(new MessageWasPosted($createdMessage));
+            if (isset($validitedata['text']) && isset($validitedata['media'])) {
+
+                $filename = $validitedata['numOrder'].$validitedata['media'];
+
+                if (!Storage::exists('public/images/messages/media/')) {
+                    Storage::makeDirectory('public/images/messages/media/');
+                }
+                if (Storage::exists('public/images/messages/media/') && Storage::exists('public/images/orders/'.$validitedata['media'])) {
+                    Storage::copy('public/images/orders/'.$validitedata['media'], 'public/images/messages/media/' . $filename);
+                } else {
+                   echo 'non file';
+                }
+                
+                $validitedata['media'] = "public/images/messages/media/".$validitedata['numOrder'].$validitedata['media'];
+
+                $createdMessage = Message::create([
+                    'sender_id' => auth()->user()->id,
+                    'receiver_id' => $validitedata['receiver_id'],
+                    'type' => $validitedata['type'],
+                    'text' => isset($validitedata['text']) ? $validitedata['text'] : null,
+                    'media' => isset($validitedata['media']) ? $validitedata['media'] : null,
+                    'video' => isset($validitedata['video']) ? $validitedata['video'] : null,
+                    'document' => isset($validitedata['document']) ? $validitedata['document'] : null,
+                    'numOrder' => isset($validitedata['numOrder']) ? $validitedata['numOrder'] : null,
+                    'conversation_id' =>$checkConversation[0]->id,
+                ]);
+                
+                event(new MessageWasPosted($createdMessage));
+                
+            }else{
+                $createdMessage = Message::create([
+                    'sender_id' => auth()->user()->id,
+                    'receiver_id' => $validitedata['receiver_id'],
+                    'type' => $validitedata['type'],
+                    'text' => isset($validitedata['text']) ? $validitedata['text'] : null,
+                    'media' => isset($validitedata['media']) ? $validitedata['media'] : null,
+                    'video' => isset($validitedata['video']) ? $validitedata['video'] : null,
+                    'document' => isset($validitedata['document']) ? $validitedata['document'] : null,
+                    'numOrder' => isset($validitedata['numOrder']) ? $validitedata['numOrder'] : null,
+                    'conversation_id' =>$checkConversation[0]->id,
+                ]);
+                
+                event(new MessageWasPosted($createdMessage));
+            }
 
             //ProcessPendingMessages::dispatch($createdMessage);
 
-            $user = User::find($createdMessage->receiver_id);
-
-            if ($createdMessage->media != null) {
-                $firebasePushController->notification([
-                    'fcm_token' => $user->fcm_token,
-                    'title' => 'Message',
-                    'body' => $createdMessage->media,
-                    'receiver_id' => $createdMessage->receiver_id,
-                    'conversation_id' => $createdMessage->conversation_id,
-                ]);
-            }else{
-                $firebasePushController->notification([
-                    'fcm_token' => $user->fcm_token,
-                    'title' => 'Message',
-                    'body' => $createdMessage->text,
-                    'receiver_id' => $createdMessage->receiver_id,
-                    'conversation_id' => $createdMessage->conversation_id,
-                ]);
+            try {
+                // Vérification du token avant d'envoyer le message
+                $user = User::find($createdMessage->receiver_id);
+    
+                if ($user && $user->fcm_token) {
+                    // Envoyer le message car le token est valide
+                    if ($createdMessage->media != null) {
+                        $firebasePushController->notification([
+                            'fcm_token' => $user->fcm_token,
+                            'title' => 'Message',
+                            'body' => $createdMessage->media,
+                            'receiver_id' => $createdMessage->receiver_id,
+                            'conversation_id' => $createdMessage->conversation_id,
+                        ]);
+                    } else {
+                        $firebasePushController->notification([
+                            'fcm_token' => $user->fcm_token,
+                            'title' => 'Message',
+                            'body' => $createdMessage->text,
+                            'receiver_id' => $createdMessage->receiver_id,
+                            'conversation_id' => $createdMessage->conversation_id,
+                        ]);
+                    }
+                } else {
+                   echo response()->json([
+                        'status' => true,
+                        'message' => 'Token introuvable',
+                        'data' => [
+                            "message"=> MessageResource::make($createdMessage),
+                        ],
+                    ]);
+                }
+            } catch (NotFound $e) {
+                // Gérer l'exception, par exemple, enregistrer le message dans les logs
+                Log::error('Erreur Firebase : ' . $e->getMessage());
+                // ...
             }
             
             //$this->sendNotificationToReceiver($createdMessage);
@@ -153,41 +206,98 @@ class MessageController extends Controller
             if ($request->hasFile('document')) {
                 $validitedata['document'] = $request->file('document')->store('public/images/messages/documents');
             }
+
+            if ($checkConversation[0]->is_sender_delete == 1 || $checkConversation[0]->is_receiver_delete == 1 ) {
+                $checkConversation[0]->is_sender_delete = false;
+                $checkConversation[0]->is_receiver_delete = false;
+    
+                $checkConversation[0]->save();
+            }
             
-            $createdMessage = Message::create([
-                'sender_id' => auth()->user()->id,
-                'receiver_id' => $validitedata['receiver_id'],
-                'type' => $validitedata['type'],
-                'text' => isset($validitedata['text']) ? $validitedata['text'] : null,
-                'media' => isset($validitedata['media']) ? $validitedata['media'] : null,
-                'video' => isset($validitedata['video']) ? $validitedata['video'] : null,
-                'document' => isset($validitedata['document']) ? $validitedata['document'] : null,
-                'conversation_id' =>$checkConversation[0]->id,
-            ]);
+            if (isset($validitedata['text']) && isset($validitedata['media'])) {
 
-            $user = User::find($createdMessage->receiver_id);
+                $filename = $validitedata['numOrder'].$validitedata['media'];
 
-            if ($createdMessage->media != null) {
-                $firebasePushController->notification([
-                    'fcm_token' => $user->fcm_token,
-                    'title' => 'Message',
-                    'body' => $createdMessage->media,
-                    'receiver_id' => $createdMessage->receiver_id,
-                    'conversation_id' => $createdMessage->conversation_id,
+                if (!Storage::exists('public/images/messages/media/')) {
+                    Storage::makeDirectory('public/images/messages/media/');
+                }
+                if (Storage::exists('public/images/messages/media/') && Storage::exists('public/images/orders/'.$validitedata['media'])) {
+                    Storage::copy('public/images/orders/'.$validitedata['media'], 'public/images/messages/media/' . $filename);
+                } else {
+                   echo 'non file';
+                }
+                
+                $validitedata['media'] = "public/images/messages/media/".$validitedata['numOrder'].$validitedata['media'];
+
+                $createdMessage = Message::create([
+                    'sender_id' => auth()->user()->id,
+                    'receiver_id' => $validitedata['receiver_id'],
+                    'type' => $validitedata['type'],
+                    'text' => isset($validitedata['text']) ? $validitedata['text'] : null,
+                    'media' => isset($validitedata['media']) ? $validitedata['media'] : null,
+                    'video' => isset($validitedata['video']) ? $validitedata['video'] : null,
+                    'document' => isset($validitedata['document']) ? $validitedata['document'] : null,
+                    'numOrder' => isset($validitedata['numOrder']) ? $validitedata['numOrder'] : null,
+                    'conversation_id' =>$checkConversation[0]->id,
                 ]);
+                
+                event(new MessageWasPosted($createdMessage));
+                
             }else{
-                $firebasePushController->notification([
-                    'fcm_token' => $user->fcm_token,
-                    'title' => 'Message',
-                    'body' => $createdMessage->text,
-                    'receiver_id' => $createdMessage->receiver_id,
-                    'conversation_id' => $createdMessage->conversation_id,
+                $createdMessage = Message::create([
+                    'sender_id' => auth()->user()->id,
+                    'receiver_id' => $validitedata['receiver_id'],
+                    'type' => $validitedata['type'],
+                    'text' => isset($validitedata['text']) ? $validitedata['text'] : null,
+                    'media' => isset($validitedata['media']) ? $validitedata['media'] : null,
+                    'video' => isset($validitedata['video']) ? $validitedata['video'] : null,
+                    'document' => isset($validitedata['document']) ? $validitedata['document'] : null,
+                    'numOrder' => isset($validitedata['numOrder']) ? $validitedata['numOrder'] : null,
+                    'conversation_id' =>$checkConversation[0]->id,
                 ]);
+                
+                event(new MessageWasPosted($createdMessage));
+            }
+
+
+            try {
+                $user = User::find($createdMessage->receiver_id);
+    
+                if ($user && $user->fcm_token) {
+
+                    if ($createdMessage->media != null) {
+                        $firebasePushController->notification([
+                            'fcm_token' => $user->fcm_token,
+                            'title' => 'Message',
+                            'body' => $createdMessage->media,
+                            'receiver_id' => $createdMessage->receiver_id,
+                            'conversation_id' => $createdMessage->conversation_id,
+                        ]);
+                    } else {
+                        $firebasePushController->notification([
+                            'fcm_token' => $user->fcm_token,
+                            'title' => 'Message',
+                            'body' => $createdMessage->text,
+                            'receiver_id' => $createdMessage->receiver_id,
+                            'conversation_id' => $createdMessage->conversation_id,
+                        ]);
+                    }
+                } else {
+                   echo response()->json([
+                        'status' => false,
+                        'message' => 'Token introuvable',
+                        'data' => [
+                            "message"=> MessageResource::make($createdMessage),
+                        ],
+                    ]);
+                }
+            } catch (NotFound $e) {
+                Log::error('Erreur Firebase : ' . $e->getMessage());
             }
 
 
             //dd($createdMessage->conversation->id);
-            event(new MessageWasPosted($createdMessage));
+           
             
            // ProcessPendingMessages::dispatch($createdMessage);
 

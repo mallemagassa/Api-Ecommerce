@@ -20,23 +20,6 @@ class ConversationController extends Controller
      */
     public function index()
     {
-        // $data = [];
-        // $conversations = Conversation::where('sender_id', auth()->user()->id)
-        //     ->orWhere('receiver_id', auth()->user()->id)
-        //     ->orderBy('created_at', 'DESC')
-        //     ->get();
-    
-        // foreach ($conversations as $conversation) {
-        //     $user = $this->getChatUser($conversation);
-    
-        //     $data[] = [
-        //         'user' => new UserResource($user), // Les informations de l'utilisateur
-        //         'conversation_id' => $conversation->id, // L'ID de la conversation
-        //     ];
-        // }
-    
-        // return response()->json($data);
-
         $data = [];
         $conversations = Conversation::where('sender_id', auth()->user()->id)
             ->orWhere('receiver_id', auth()->user()->id)
@@ -69,7 +52,6 @@ class ConversationController extends Controller
             }
             
         }
-        //dd($data[0]['user']->phone);
     
         return response()->json($data);
     }
@@ -254,9 +236,35 @@ class ConversationController extends Controller
         if ($conversation->sender_id == auth()->user()->id) {
             $conversation->is_sender_delete = true;
 
+            $messages =  Message::where('conversation_id', $conversation->id)->get();
+            foreach($messages as $message){
+                if ($message->sender_id == auth()->user()->id) {
+                    $message->is_sender_delete = true;
+        
+                    $message->save();
+                }else{
+                    $message->is_receiver_delete = true;
+        
+                    $message->save();
+                }
+            }
             $conversation->save();
         }else{
             $conversation->is_receiver_delete = true;
+
+            $messages =  Message::where('conversation_id', $conversation->id)->get();
+
+            foreach($messages as $message){
+                if ($message->sender_id == auth()->user()->id) {
+                    $message->is_sender_delete = true;
+        
+                    $message->save();
+                }else{
+                    $message->is_receiver_delete = true;
+        
+                    $message->save();
+                }
+            }
 
             $conversation->save();
         }

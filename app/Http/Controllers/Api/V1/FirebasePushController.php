@@ -22,7 +22,7 @@ class FirebasePushController extends Controller
         $token = $request->input('fcm_token');
         $request->user()->update([
             'fcm_token' => $token
-        ]); //Get the currrently logged in user and set their token
+        ]);
         return response()->json([
             'message' => 'Successfully Updated FCM Token'
         ]);
@@ -31,18 +31,12 @@ class FirebasePushController extends Controller
 
     public  function notification(array $data)
     {
-        //$FcmToken = auth()->user()->fcm_token;
-        $notifications = Notification::create($data['title'], $data['body']);
-        
-        // 'token' => $FcmToken,
-        $message = CloudMessage::new()
-        ->withNotification($notifications)
-        ->withTarget('token',  $data['fcm_token'])
+        $message = CloudMessage::withTarget('token',  $data['fcm_token'])
+        ->withNotification(Notification::create($data['title'], $data['body']))
         ->withData([
             'receiver_id' => $data['receiver_id'],
             'conversation_id' => $data['conversation_id']
         ]);
-
-        $this->notification->send($message, $data['fcm_token']);
+        $this->notification->send($message);
     }
 }

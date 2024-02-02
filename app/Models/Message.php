@@ -25,6 +25,7 @@ class Message extends Model
         'media',
         'video',
         'document',
+        'numOrder',
         'conversation_id'
     ];
 

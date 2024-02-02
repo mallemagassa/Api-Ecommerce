@@ -69,9 +69,13 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
         Route::get('/sellerProduct/{id}', [ProductController::class, 'sellerProduct']);
         Route::get('/getImageMessage/{url}', [MessageController::class, 'getImageMessage']);
         Route::get('/getImageProductM/{url}', [MessageController::class, 'getImageProductM']);
+        Route::get('/getImageOrderM/{url}', [OrderController::class, 'getImageOrderM']);
         Route::get('/deleteImageMessage/{url}', [MessageController::class, 'deleteImageMessage']);
         Route::get('/getOrderWithUser', [OrderController::class, 'getOrderWithUser']);
-        Route::get('/getOrderAuth', [OrderController::class, 'getOrderAuth']);
+        Route::get('/getOrderReceived', [OrderController::class, 'getOrderReceived']);
+        Route::get('/getOrderAuthReceirve/{id}', [OrderController::class, 'getOrderAuthReceirve']);
+        Route::get('/getOrderAuth/{id}', [OrderController::class, 'getOrderAuth']);
+        Route::get('/getOrderDetail', [OrderController::class, 'getOrderDetail']);
         Route::post('/setToken', [FirebasePushController::class, 'setToken']);
         Route::post('/notification', [FirebasePushController::class, 'notification']);
         //Route::get('/deleteMessage/{messageId}', [MessageController::class, 'deleteMessage']);

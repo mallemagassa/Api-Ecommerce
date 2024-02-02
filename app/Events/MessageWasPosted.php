@@ -64,8 +64,8 @@ class MessageWasPosted implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'user' => Auth::user(),
-            //'message' => $this->message->toArray(),
+            //'user' => Auth::user(),
+            'message' => $this->message->toArray(),
         ];
     }
 }

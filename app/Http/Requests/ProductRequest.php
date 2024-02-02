@@ -25,7 +25,7 @@ class ProductRequest extends FormRequest
         return [
             "name" => 'required|string|max:255',
             "price" => 'required|numeric',
-            "image" => 'required|image|mimes:jpg,png,jpeg|max:2048',
+            "image" => 'required|file|image',
             "quantity" => 'required|numeric',
             "describes" => 'required|string|max:2000',
             "user_id" => 'exists:App\Models\User,id',
